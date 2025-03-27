@@ -31,71 +31,26 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
     capNhatQuyetDinh,
     xoaQuyetDinh,
     timKiemQuyetDinh,
+    fetchDanhSachQuyetDinh
   } = useInitModel<QuyetDinhTotNghiep>();
 
   const [visibleDetail, setVisibleDetail] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
 
-  // Giả lập dữ liệu ban đầu
+  // Sử dụng useEffect để gọi API khi component mount
   useEffect(() => {
-    // Tạo dữ liệu mẫu
-    const mockData: QuyetDinhTotNghiep[] = [
-      {
-        id: '1',
-        soQuyetDinh: 'QĐ-12345/2023',
-        ngayBanHanh: new Date('2023-06-15'),
-        trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2020',
-        soVanBangId: '1',
-      },
-      {
-        id: '2',
-        soQuyetDinh: 'QĐ-67890/2023',
-        ngayBanHanh: new Date('2023-07-20'),
-        trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2021 đợt 1',
-        soVanBangId: '2',
-      },
-      {
-        id: '3',
-        soQuyetDinh: 'QĐ-54321/2023',
-        ngayBanHanh: new Date('2023-09-10'),
-        trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2021 đợt 2',
-        soVanBangId: '2',
-      },
-    ];
-    
-    setDanhSachQuyetDinh(mockData);
-  }, [setDanhSachQuyetDinh]);
+    fetchDanhSachQuyetDinh();
+  }, []);
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (value: string) => {
     setSearchValue(value);
+    
     if (value.trim() === '') {
-      // Giả lập reload lại dữ liệu ban đầu
-      const mockData: QuyetDinhTotNghiep[] = [
-        {
-          id: '1',
-          soQuyetDinh: 'QĐ-12345/2023',
-          ngayBanHanh: new Date('2023-06-15'),
-          trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2020',
-          soVanBangId: '1',
-        },
-        {
-          id: '2',
-          soQuyetDinh: 'QĐ-67890/2023',
-          ngayBanHanh: new Date('2023-07-20'),
-          trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2021 đợt 1',
-          soVanBangId: '2',
-        },
-        {
-          id: '3',
-          soQuyetDinh: 'QĐ-54321/2023',
-          ngayBanHanh: new Date('2023-09-10'),
-          trichYeu: 'Quyết định công nhận tốt nghiệp cho sinh viên khóa 2021 đợt 2',
-          soVanBangId: '2',
-        },
-      ];
-      setDanhSachQuyetDinh(mockData);
+      // Nếu không có giá trị tìm kiếm, lấy lại toàn bộ danh sách
+      fetchDanhSachQuyetDinh();
     } else {
+      // Tìm kiếm từ dữ liệu đã có
       timKiemQuyetDinh(value);
     }
   };
@@ -115,13 +70,21 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
   };
 
   // Xử lý submit form modal
-  const handleSubmitModal = (values: any) => {
+  const handleSubmitModal = async (values: any) => {
     if (modalType === 'add') {
-      themQuyetDinh(values);
+      const success = await themQuyetDinh(values);
+      if (success) {
+        setVisibleModal(false);
+      }
     } else {
-      capNhatQuyetDinh(values as QuyetDinhTotNghiep);
+      const success = await capNhatQuyetDinh({
+        ...values,
+        id: quyetDinhSelected?.id as number,
+      });
+      if (success) {
+        setVisibleModal(false);
+      }
     }
-    setVisibleModal(false);
   };
 
   // Mở drawer xem chi tiết
@@ -176,7 +139,12 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
           />
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa quyết định này?"
-            onConfirm={() => xoaQuyetDinh(record.id)}
+            onConfirm={async () => {
+              const success = await xoaQuyetDinh(record.id);
+              if (success) {
+                message.success("Đã xóa quyết định thành công");
+              }
+            }}
             okText="Xóa"
             cancelText="Hủy"
           >
@@ -200,7 +168,7 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
         options={{
           density: true,
           fullScreen: true,
-          reload: false,
+          reload: () => fetchDanhSachQuyetDinh(),
           setting: true,
         }}
         toolbar={{

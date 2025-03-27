@@ -1,14 +1,16 @@
-import { useCallback, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { message } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
+import QuyetDinhTotNghiepService from '@/services/QuyetDinhTotNghiep';
 
 // Định nghĩa interface cho quyết định tốt nghiệp
 export interface QuyetDinhTotNghiep {
-  id: string;
+  id: number;
   soQuyetDinh: string;
   ngayBanHanh: Date;
   trichYeu: string;
-  soVanBangId: string;
+  soVanBangId: number;
+  nam?: number; // Từ join với bảng SoVanBang
 }
 
 // Định nghĩa interface cho sổ văn bằng để sử dụng trong dropdown
@@ -18,11 +20,10 @@ export interface SoVanBang {
 }
 
 // Hook để quản lý state của quyết định tốt nghiệp
-export function useInitModel<T extends QuyetDinhTotNghiep>() {
-  const [danhSachQuyetDinh, setDanhSachQuyetDinh] = useState<T[]>([]);
+export function useInitModel() {
+  const [danhSachQuyetDinh, setDanhSachQuyetDinh] = useState<QuyetDinhTotNghiep[]>([]);
+  const [quyetDinhSelected, setQuyetDinhSelected] = useState<QuyetDinhTotNghiep | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [searching, setSearching] = useState<boolean>(false);
-  const [quyetDinhSelected, setQuyetDinhSelected] = useState<T | null>(null);
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
 
@@ -33,59 +34,162 @@ export function useInitModel<T extends QuyetDinhTotNghiep>() {
     { id: '3', ten: 'Sổ văn bằng khóa 2022' },
   ]);
 
-  // Hàm thêm quyết định mới
-  const themQuyetDinh = useCallback((quyetDinh: Omit<T, 'id'>) => {
-    const newQuyetDinh = {
-      ...quyetDinh,
-      id: uuidv4(),
-    } as T;
-    
-    setDanhSachQuyetDinh((prev) => [...prev, newQuyetDinh]);
-    message.success('Thêm quyết định thành công');
-    return true;
+  // Hàm lấy danh sách từ API
+  const fetchDanhSachQuyetDinh = async () => {
+    setLoading(true);
+    try {
+      const response = await QuyetDinhTotNghiepService.getList();
+      if (response.data.success) {
+        // Chuyển đổi dữ liệu từ backend sang format frontend
+        const formattedData = response.data.data.map((item) => ({
+          id: item.id,
+          soQuyetDinh: item.so_quyet_dinh,
+          ngayBanHanh: new Date(item.ngay_ban_hanh),
+          trichYeu: item.trich_yeu,
+          soVanBangId: item.so_van_bang_id,
+          nam: item.nam
+        }));
+        setDanhSachQuyetDinh(formattedData);
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      }
+    } catch (error) {
+      message.error('Không thể kết nối đến server');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch dữ liệu khi component mount
+  useEffect(() => {
+    fetchDanhSachQuyetDinh();
   }, []);
+
+  // Hàm thêm quyết định mới
+  const themQuyetDinh = async (quyetDinh: Omit<QuyetDinhTotNghiep, 'id'>) => {
+    setLoading(true);
+    try {
+      // Chuyển đổi dữ liệu từ frontend sang format backend
+      const quyetDinhData = {
+        so_quyet_dinh: quyetDinh.soQuyetDinh,
+        ngay_ban_hanh: quyetDinh.ngayBanHanh.toISOString(),
+        trich_yeu: quyetDinh.trichYeu,
+        so_van_bang_id: quyetDinh.soVanBangId
+      };
+      console.log(quyetDinhData);
+      const response = await QuyetDinhTotNghiepService.create(quyetDinhData);
+      
+      if (response.data.success) {
+        message.success('Thêm quyết định thành công');
+        await fetchDanhSachQuyetDinh(); // Refresh danh sách
+        return true;
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi thêm quyết định');
+        return false;
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
+      console.error(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Hàm cập nhật quyết định
-  const capNhatQuyetDinh = useCallback((quyetDinh: T) => {
-    setDanhSachQuyetDinh((prev) => 
-      prev.map((item) => (item.id === quyetDinh.id ? quyetDinh : item))
-    );
-    message.success('Cập nhật quyết định thành công');
-    return true;
-  }, []);
+  const capNhatQuyetDinh = async (quyetDinh: QuyetDinhTotNghiep) => {
+    setLoading(true);
+    try {
+      // Chuyển đổi dữ liệu từ frontend sang format backend
+      const quyetDinhData = {
+        so_quyet_dinh: quyetDinh.soQuyetDinh,
+        ngay_ban_hanh: quyetDinh.ngayBanHanh.toISOString(),
+        trich_yeu: quyetDinh.trichYeu,
+        so_van_bang_id: quyetDinh.soVanBangId
+      };
+      console.log(quyetDinhData);
+      const response = await QuyetDinhTotNghiepService.update(quyetDinh.id, quyetDinhData);
+      
+      if (response.data.success) {
+        message.success('Cập nhật quyết định thành công');
+        await fetchDanhSachQuyetDinh(); // Refresh danh sách
+        return true;
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi cập nhật quyết định');
+        return false;
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
+      console.error(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Hàm xóa quyết định
-  const xoaQuyetDinh = useCallback((id: string) => {
-    setDanhSachQuyetDinh((prev) => prev.filter((item) => item.id !== id));
-    message.success('Xóa quyết định thành công');
-    return true;
-  }, []);
-
-  // Hàm tìm kiếm quyết định theo số quyết định
-  const timKiemQuyetDinh = useCallback((soQuyetDinh: string) => {
-    setSearching(true);
-    // Giả lập delay khi tìm kiếm
-    setTimeout(() => {
-      if (!soQuyetDinh.trim()) {
-        setDanhSachQuyetDinh([]);
+  const xoaQuyetDinh = async (id: number) => {
+    setLoading(true);
+    try {
+      const response = await QuyetDinhTotNghiepService.delete(id);
+      
+      if (response.data.success) {
+        message.success('Xóa quyết định thành công');
+        await fetchDanhSachQuyetDinh(); // Refresh danh sách
+        return true;
       } else {
-        const ketQuaTimKiem = danhSachQuyetDinh.filter((item) =>
-          item.soQuyetDinh.toLowerCase().includes(soQuyetDinh.toLowerCase())
-        );
-        setDanhSachQuyetDinh(ketQuaTimKiem);
+        message.error(response.data.message || 'Có lỗi xảy ra khi xóa quyết định');
+        return false;
       }
-      setSearching(false);
-    }, 500);
-  }, [danhSachQuyetDinh]);
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        message.error('Không thể xóa quyết định này vì đã được sử dụng');
+      } else if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
+      console.error(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Hàm tìm kiếm quyết định
+  const timKiemQuyetDinh = (keyword: string) => {
+    setLoading(true);
+    try {
+      // Tìm kiếm từ dữ liệu đã có trong state
+      const result = danhSachQuyetDinh.filter(item =>
+        item.soQuyetDinh.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.trichYeu.toLowerCase().includes(keyword.toLowerCase())
+      );
+      setDanhSachQuyetDinh(result);
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi tìm kiếm');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     danhSachQuyetDinh,
     setDanhSachQuyetDinh,
-    loading,
-    setLoading,
-    searching,
     quyetDinhSelected,
     setQuyetDinhSelected,
+    loading,
+    setLoading,
     visibleModal,
     setVisibleModal,
     modalType,
@@ -95,5 +199,6 @@ export function useInitModel<T extends QuyetDinhTotNghiep>() {
     capNhatQuyetDinh,
     xoaQuyetDinh,
     timKiemQuyetDinh,
+    fetchDanhSachQuyetDinh
   };
 } 

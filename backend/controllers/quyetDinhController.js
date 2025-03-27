@@ -62,6 +62,7 @@ class QuyetDinhController {
     // Cập nhật quyết định
     async update(req, res) {
         try {
+            console.log(req.body);
             const result = await QuyetDinhTotNghiep.update(req.params.id, req.body);
             if (result.affectedRows === 0) {
                 return res.status(404).json({
