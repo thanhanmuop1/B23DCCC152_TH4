@@ -70,24 +70,29 @@ FOR EACH ROW
 BEGIN
     DECLARE so_vao_so_moi INT;
     DECLARE so_van_bang_id INT;
-    
-    -- Lấy năm hiện tại
-    SET @nam_hien_tai = YEAR(CURDATE());
 
-    -- Kiểm tra sổ văn bằng của năm hiện tại
-    SELECT id, so_hien_tai INTO so_van_bang_id, so_vao_so_moi
-    FROM SoVanBang
-    WHERE nam = @nam_hien_tai
+    -- Lấy năm từ bảng QuyetDinhTotNghiep (năm sẽ dựa trên quyết định của văn bằng)
+    SELECT YEAR(ngay_ban_hanh) INTO @nam_quyet_dinh
+    FROM QuyetDinhTotNghiep
+    WHERE id = NEW.quyet_dinh_id
     LIMIT 1;
 
-    -- Nếu không tìm thấy sổ, tạo mới
+    -- Tìm sổ văn bằng theo năm từ bảng SoVanBang
+    SELECT id, so_hien_tai INTO so_van_bang_id, so_vao_so_moi
+    FROM SoVanBang
+    WHERE nam = @nam_quyet_dinh
+    LIMIT 1;
+
+    -- Nếu không tìm thấy sổ văn bằng, tạo mới
     IF so_van_bang_id IS NULL THEN
-        INSERT INTO SoVanBang (nam, so_hien_tai) VALUES (@nam_hien_tai, 1);
-        SET so_vao_so_moi = 1;
+        INSERT INTO SoVanBang (nam, so_hien_tai) VALUES (@nam_quyet_dinh, 1);
         SET so_van_bang_id = LAST_INSERT_ID();
+        SET so_vao_so_moi = 1;
     ELSE
-        -- Cập nhật số vào sổ
-        UPDATE SoVanBang SET so_hien_tai = so_hien_tai + 1 WHERE id = so_van_bang_id;
+        -- Cập nhật số vào sổ mới
+        UPDATE SoVanBang
+        SET so_hien_tai = so_hien_tai + 1
+        WHERE id = so_van_bang_id;
         SET so_vao_so_moi = so_vao_so_moi + 1;
     END IF;
 
@@ -98,4 +103,5 @@ BEGIN
 END $$
 
 DELIMITER ;
+
 
