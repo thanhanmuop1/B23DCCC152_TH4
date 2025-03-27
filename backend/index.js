@@ -14,6 +14,7 @@ app.use(express.json());
 app.use('/api/quyetdinh', quyetDinhRoutes);
 app.use('/api/sovanbang', soVanBangRoutes);
 
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
