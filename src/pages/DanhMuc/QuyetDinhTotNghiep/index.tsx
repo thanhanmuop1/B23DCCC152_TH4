@@ -6,7 +6,7 @@ import {
 import { Button, Input, Space, Popconfirm, message, Drawer } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType } from 'antd';
-import { useInitModel, QuyetDinhTotNghiep } from './model';
+import { useInitModel, QuyetDinhTotNghiep } from '../../../models/Vanbang/quyetdinhtotnghiep';
 import QuyetDinhModal from './components/QuyetDinhModal';
 import QuyetDinhDetail from './components/QuyetDinhDetail';
 import moment from 'moment';

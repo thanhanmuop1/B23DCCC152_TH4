@@ -1,6 +1,6 @@
 import React from 'react';
 import { Descriptions, Card } from 'antd';
-import { QuyetDinhTotNghiep, SoVanBang } from '../model';
+import { QuyetDinhTotNghiep, SoVanBang } from '../../../../models/Vanbang/quyetdinhtotnghiep';
 import moment from 'moment';
 
 interface QuyetDinhDetailProps {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select, DatePicker, Space, Button } from 'antd';
-import { QuyetDinhTotNghiep, SoVanBang } from '../model';
+import { QuyetDinhTotNghiep, SoVanBang } from '../../../../models/Vanbang/quyetdinhtotnghiep';
 import moment from 'moment';
 import 'moment/locale/vi';
 import locale from 'antd/es/date-picker/locale/vi_VN';
