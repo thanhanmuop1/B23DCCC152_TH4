@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const quyetDinhRoutes = require('./routes/quyetDinhRoutes');
+const soVanBangRoutes = require('./routes/soVanBangRoutes');
 
 
 const app = express();
@@ -11,6 +12,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/quyetdinh', quyetDinhRoutes);
+app.use('/api/sovanbang', soVanBangRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
