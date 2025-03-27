@@ -6,7 +6,7 @@ import {
 import { Button, Input, Space, Popconfirm, message, Drawer } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType } from 'antd';
-import { useInitModel, SoVanBang } from './sovanbang';
+import { useInitModel, SoVanBang } from '../../../models/Vanbang/sovanbang';
 import SoVanBangModal from './components/SoVanBangModal';
 import SoVanBangDetail from './components/SoVanBangDetail';
 

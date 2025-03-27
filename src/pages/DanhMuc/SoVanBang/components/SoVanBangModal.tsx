@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, InputNumber } from 'antd';
-import { SoVanBang } from '../sovanbang';
+import { SoVanBang } from '../../../../models/Vanbang/sovanbang';
 
 interface SoVanBangModalProps {
   visible: boolean;

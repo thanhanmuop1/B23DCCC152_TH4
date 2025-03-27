@@ -1,6 +1,6 @@
 import React from 'react';
 import { Descriptions } from 'antd';
-import { SoVanBang } from '../sovanbang';
+import { SoVanBang } from '../../../../models/Vanbang/sovanbang';
 
 interface SoVanBangDetailProps {
   soVanBang: SoVanBang;

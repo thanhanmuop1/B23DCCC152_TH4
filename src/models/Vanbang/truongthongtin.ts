@@ -1,35 +1,70 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { message } from 'antd';
+import TruongThongTinService from '@/services/TruongThongTin';
+import type { TruongThongTinRecord } from '@/services/TruongThongTin/typing';
 
-// Định nghĩa kiểu dữ liệu cho Trường Thông Tin
+// Cập nhật interface để phù hợp với backend
 export interface TruongThongTin {
-  id: string;
-  tenTruong: string;
-  kieuDuLieu: 'String' | 'Number' | 'Date';
-  batBuoc: boolean;
+  id: number;
+  ten_truong: string;
+  kieu_du_lieu: 'String' | 'Number' | 'Date';
 }
 
 // Hook quản lý state và logic
-export function useInitModel<T extends TruongThongTin>() {
-  const [danhSachTruongThongTin, setDanhSachTruongThongTin] = useState<T[]>([]);
-  const [truongThongTinSelected, setTruongThongTinSelected] = useState<T | null>(null);
+export function useInitModel() {
+  const [danhSachTruongThongTin, setDanhSachTruongThongTin] = useState<TruongThongTin[]>([]);
+  const [truongThongTinSelected, setTruongThongTinSelected] = useState<TruongThongTin | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
 
-  // Hàm thêm trường thông tin mới
-  const themTruongThongTin = (values: Omit<T, 'id'>) => {
+  // Fetch dữ liệu khi component mount
+  useEffect(() => {
+    fetchDanhSachTruongThongTin();
+  }, []);
+
+  // Hàm lấy danh sách từ API
+  const fetchDanhSachTruongThongTin = async () => {
     setLoading(true);
     try {
-      const newItem = {
-        ...values,
-        id: Math.floor(Math.random() * 10000).toString(), // Giả lập ID
-      } as T;
-
-      setDanhSachTruongThongTin(prev => [...prev, newItem]);
-      message.success('Đã thêm trường thông tin mới thành công');
+      const response = await TruongThongTinService.getList();
+      if (response.data.success) {
+        // Cần chuyển đổi dữ liệu từ backend sang format frontend
+        const formattedData = response.data.data.map((item: any) => ({
+          id: item.id,
+          ten_truong: item.ten_truong,
+          kieu_du_lieu: item.kieu_du_lieu as 'String' | 'Number' | 'Date'
+        }));
+        setDanhSachTruongThongTin(formattedData);
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      }
     } catch (error) {
-      message.error('Có lỗi xảy ra khi thêm trường thông tin');
+      message.error('Không thể kết nối đến server');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Hàm thêm trường thông tin mới
+  const themTruongThongTin = async (values: Omit<TruongThongTin, 'id'>) => {
+    setLoading(true);
+    try {
+      const response = await TruongThongTinService.create(values);
+      if (response.data.success) {
+        message.success('Thêm trường thông tin thành công');
+        await fetchDanhSachTruongThongTin(); // Refresh danh sách
+        setVisibleModal(false);
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi thêm');
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
       console.error(error);
     } finally {
       setLoading(false);
@@ -37,15 +72,19 @@ export function useInitModel<T extends TruongThongTin>() {
   };
 
   // Hàm cập nhật trường thông tin
-  const capNhatTruongThongTin = (values: T) => {
+  const capNhatTruongThongTin = async (values: TruongThongTin) => {
     setLoading(true);
     try {
-      setDanhSachTruongThongTin(prev =>
-        prev.map(item => (item.id === values.id ? values : item))
-      );
-      message.success('Đã cập nhật trường thông tin thành công');
+      const response = await TruongThongTinService.update(values.id, values);
+      if (response.data.success) {
+        message.success('Cập nhật trường thông tin thành công');
+        await fetchDanhSachTruongThongTin(); // Refresh danh sách
+        setVisibleModal(false);
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi cập nhật');
+      }
     } catch (error) {
-      message.error('Có lỗi xảy ra khi cập nhật trường thông tin');
+      message.error('Không thể kết nối đến server');
       console.error(error);
     } finally {
       setLoading(false);
@@ -53,39 +92,23 @@ export function useInitModel<T extends TruongThongTin>() {
   };
 
   // Hàm xóa trường thông tin
-  const xoaTruongThongTin = (id: string) => {
+  const xoaTruongThongTin = async (id: number) => {
     setLoading(true);
     try {
-      // Kiểm tra nếu trường đã được sử dụng (giả lập)
-      const daDuocSuDung = false; // Trong thực tế, cần kiểm tra từ backend
-      
-      if (daDuocSuDung) {
-        message.error('Không thể xóa trường thông tin này vì đã được sử dụng trong văn bằng');
-        return;
+      const response = await TruongThongTinService.delete(id);
+      if (response.data.success) {
+        message.success('Xóa trường thông tin thành công');
+        await fetchDanhSachTruongThongTin(); // Refresh danh sách
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi xóa');
       }
-
-      setDanhSachTruongThongTin(prev => prev.filter(item => item.id !== id));
-      message.success('Đã xóa trường thông tin thành công');
-    } catch (error) {
-      message.error('Có lỗi xảy ra khi xóa trường thông tin');
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        message.error('Không thể xóa trường thông tin này vì đã được sử dụng');
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
       console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Hàm tìm kiếm trường thông tin
-  const timKiemTruongThongTin = (keyword: string) => {
-    setLoading(true);
-    try {
-      const result = danhSachTruongThongTin.filter(item =>
-        item.tenTruong.toLowerCase().includes(keyword.toLowerCase())
-      );
-      return result;
-    } catch (error) {
-      message.error('Có lỗi xảy ra khi tìm kiếm');
-      console.error(error);
-      return [];
     } finally {
       setLoading(false);
     }
@@ -105,6 +128,6 @@ export function useInitModel<T extends TruongThongTin>() {
     themTruongThongTin,
     capNhatTruongThongTin,
     xoaTruongThongTin,
-    timKiemTruongThongTin,
+    fetchDanhSachTruongThongTin,
   };
 } 

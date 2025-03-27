@@ -47,7 +47,7 @@ exports.getTruongThongTinById = async (req, res) => {
 exports.createTruongThongTin = async (req, res) => {
 	try {
 		const { ten_truong, kieu_du_lieu } = req.body;
-
+		console.log(req.body);
 		// Validate dữ liệu đầu vào
 		if (!ten_truong || !kieu_du_lieu) {
 			return res.status(400).json({
