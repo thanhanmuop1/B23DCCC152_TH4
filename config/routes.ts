@@ -31,6 +31,12 @@
 		hideInMenu: true,
 	},
 	{
+	path: '/danh-muc/quyet-dinh-tot-nghiep',
+	name: 'Quyết định tốt nghiệp',
+	component: './DanhMuc/QuyetDinhTotNghiep',
+	access: 'canAccessQuyetDinhTotNghiep',  // Quyền truy cập (có thể tùy chỉnh theo yêu cầu)
+  },
+	{
 		path: '/random-user',
 		name: 'RandomUser',
 		component: './RandomUser',

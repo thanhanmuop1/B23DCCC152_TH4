@@ -20,7 +20,8 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@@/*": ["./src/.umi/*"],
-			"react": ["./node_modules/@types/react"]
+			"react": ["./node_modules/@types/react"],
+			"@ant-design/pro-components": ["node_modules/@ant-design/pro-components"]
 		}
 	},
 	"include": [
