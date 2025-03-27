@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { message } from 'antd';
+import TraCuuVanBangService from '@/services/TraCuuVanBang';
+import { TraCuuParams, VanBangRecord } from '@/services/TraCuuVanBang/typing';
+import LuotTraCuuService from '@/services/LuotTraCuu';
 import { GiaTriTruongThongTin } from './thongtinvanbang';
 
 // Định nghĩa kiểu dữ liệu cho Tra cứu Văn Bằng
 export interface TraCuuVanBang {
-  id: string;
-  soHieuVanBang: string;
+  id: number;
   soVaoSo: number;
+  soHieuVanBang: string;
   maSinhVien: string;
   hoTen: string;
   ngaySinh: Date;
-  quyetDinhId: string;
-  tenQuyetDinh?: string;
-  luotTraCuu: number;
-  truongThongTin: GiaTriTruongThongTin[];
+  quyetDinhId: number;
+  soVanBangId: number;
+  soQuyetDinh: string;
+  namSo: number;
+  truongDong: Record<string, any>;
 }
 
 // Kiểu dữ liệu cho Quyết định tốt nghiệp (để hiển thị)
@@ -25,261 +29,99 @@ export interface QuyetDinhTotNghiep {
   luotTraCuu: number; // Số lượt tra cứu theo quyết định
 }
 
-// Kiểu dữ liệu cho tham số tìm kiếm
-export interface TraCuuParams {
+// Định nghĩa interface cho tham số tìm kiếm
+export interface TraCuuFormParams {
   soHieuVanBang?: string;
   soVaoSo?: number;
   maSinhVien?: string;
   hoTen?: string;
-  ngaySinh?: Date;
+  ngaySinh?: string;
 }
 
-// Hook quản lý state và logic
-export function useInitModel<T extends TraCuuVanBang>() {
-  const [ketQuaTraCuu, setKetQuaTraCuu] = useState<T[]>([]);
-  const [vanBangSelected, setVanBangSelected] = useState<T | null>(null);
+// Hook để quản lý state và logic cho tính năng tra cứu
+export function useInitModel() {
+  const [ketQuaTraCuu, setKetQuaTraCuu] = useState<TraCuuVanBang[]>([]);
+  const [vanBangSelected, setVanBangSelected] = useState<TraCuuVanBang | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [danhSachQuyetDinh, setDanhSachQuyetDinh] = useState<QuyetDinhTotNghiep[]>([]);
   const [visibleDetail, setVisibleDetail] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [thongKeTraCuu, setThongKeTraCuu] = useState<{ quyetDinh: string; luotTraCuu: number }[]>([]);
 
-  // Hàm tìm kiếm văn bằng
-  const traCuuVanBang = (params: TraCuuParams) => {
+  // Hàm tra cứu văn bằng
+  const traCuuVanBang = async (params: TraCuuFormParams) => {
     setLoading(true);
+    setHasSearched(true);
     try {
-      // Đếm số tham số tìm kiếm có giá trị
-      const paramCount = Object.values(params).filter(value => 
-        value !== undefined && value !== '' && value !== null
-      ).length;
+      // Chuyển đổi tham số từ frontend sang backend format
+      const apiParams: TraCuuParams = {
+        so_hieu_van_bang: params.soHieuVanBang,
+        so_vao_so: params.soVaoSo,
+        ma_sinh_vien: params.maSinhVien,
+        ho_ten: params.hoTen,
+        ngay_sinh: params.ngaySinh
+      };
       
-      // Kiểm tra nếu có ít nhất 2 tham số
-      if (paramCount < 2) {
-        message.error('Vui lòng nhập ít nhất 2 tham số để tra cứu');
-        setKetQuaTraCuu([]);
-        return false;
-      }
+      const response = await TraCuuVanBangService.search(apiParams);
       
-      // Giả lập API call để tìm kiếm
-      setTimeout(() => {
-        // Trong thực tế, đây sẽ là API call đến backend
-        const mockData: TraCuuVanBang[] = [
-          {
-            id: '1',
-            soVaoSo: 1,
-            soHieuVanBang: 'VB-12345/2023',
-            maSinhVien: 'SV001',
-            hoTen: 'Nguyễn Văn A',
-            ngaySinh: new Date('2000-05-15'),
-            quyetDinhId: '1',
-            tenQuyetDinh: 'QĐ-12345/2023',
-            luotTraCuu: 5,
-            truongThongTin: [
-              {
-                truongThongTinId: '1',
-                tenTruong: 'Điểm trung bình',
-                kieuDuLieu: 'Number',
-                giaTri: 8.5,
-              },
-              {
-                truongThongTinId: '2',
-                tenTruong: 'Xếp loại',
-                kieuDuLieu: 'String',
-                giaTri: 'Giỏi',
-              },
-              {
-                truongThongTinId: '3',
-                tenTruong: 'Nơi sinh',
-                kieuDuLieu: 'String',
-                giaTri: 'Hà Nội',
-              },
-              {
-                truongThongTinId: '4',
-                tenTruong: 'Ngày cấp',
-                kieuDuLieu: 'Date',
-                giaTri: new Date('2023-06-30'),
-              },
-            ],
-          },
-          {
-            id: '2',
-            soVaoSo: 2,
-            soHieuVanBang: 'VB-12346/2023',
-            maSinhVien: 'SV002',
-            hoTen: 'Trần Thị B',
-            ngaySinh: new Date('2001-03-20'),
-            quyetDinhId: '1',
-            tenQuyetDinh: 'QĐ-12345/2023',
-            luotTraCuu: 3,
-            truongThongTin: [
-              {
-                truongThongTinId: '1',
-                tenTruong: 'Điểm trung bình',
-                kieuDuLieu: 'Number',
-                giaTri: 7.8,
-              },
-              {
-                truongThongTinId: '2',
-                tenTruong: 'Xếp loại',
-                kieuDuLieu: 'String',
-                giaTri: 'Khá',
-              },
-              {
-                truongThongTinId: '3',
-                tenTruong: 'Nơi sinh',
-                kieuDuLieu: 'String',
-                giaTri: 'TP.HCM',
-              },
-              {
-                truongThongTinId: '4',
-                tenTruong: 'Ngày cấp',
-                kieuDuLieu: 'Date',
-                giaTri: new Date('2023-06-30'),
-              },
-            ],
-          },
-          {
-            id: '3',
-            soVaoSo: 3,
-            soHieuVanBang: 'VB-12347/2023',
-            maSinhVien: 'SV003',
-            hoTen: 'Lê Văn C',
-            ngaySinh: new Date('1999-11-10'),
-            quyetDinhId: '2',
-            tenQuyetDinh: 'QĐ-67890/2023',
-            luotTraCuu: 2,
-            truongThongTin: [
-              {
-                truongThongTinId: '1',
-                tenTruong: 'Điểm trung bình',
-                kieuDuLieu: 'Number',
-                giaTri: 9.2,
-              },
-              {
-                truongThongTinId: '2',
-                tenTruong: 'Xếp loại',
-                kieuDuLieu: 'String',
-                giaTri: 'Xuất sắc',
-              },
-              {
-                truongThongTinId: '3',
-                tenTruong: 'Nơi sinh',
-                kieuDuLieu: 'String',
-                giaTri: 'Đà Nẵng',
-              },
-              {
-                truongThongTinId: '4',
-                tenTruong: 'Ngày cấp',
-                kieuDuLieu: 'Date',
-                giaTri: new Date('2023-08-15'),
-              },
-            ],
-          },
-        ];
+      if (response.data.success) {
+        // Chuyển đổi dữ liệu từ backend sang format frontend
+        const formattedData = response.data.data.map((item) => ({
+          id: item.id,
+          soVaoSo: item.so_vao_so,
+          soHieuVanBang: item.so_hieu_van_bang,
+          maSinhVien: item.ma_sinh_vien,
+          hoTen: item.ho_ten,
+          ngaySinh: new Date(item.ngay_sinh),
+          quyetDinhId: item.quyet_dinh_id,
+          soVanBangId: item.so_van_bang_id,
+          soQuyetDinh: item.so_quyet_dinh,
+          namSo: item.nam_so,
+          truongDong: item.truong_dong
+        }));
         
-        // Lọc dữ liệu dựa trên tham số tìm kiếm
-        const result = mockData.filter(item => {
-          let match = true;
-          
-          if (params.soHieuVanBang) {
-            match = match && item.soHieuVanBang.toLowerCase().includes(params.soHieuVanBang.toLowerCase());
-          }
-          
-          if (params.soVaoSo) {
-            match = match && item.soVaoSo === params.soVaoSo;
-          }
-          
-          if (params.maSinhVien) {
-            match = match && item.maSinhVien.toLowerCase().includes(params.maSinhVien.toLowerCase());
-          }
-          
-          if (params.hoTen) {
-            match = match && item.hoTen.toLowerCase().includes(params.hoTen.toLowerCase());
-          }
-          
-          if (params.ngaySinh) {
-            const paramDate = new Date(params.ngaySinh);
-            const itemDate = new Date(item.ngaySinh);
-            
-            match = match && paramDate.getDate() === itemDate.getDate() && 
-                    paramDate.getMonth() === itemDate.getMonth() && 
-                    paramDate.getFullYear() === itemDate.getFullYear();
-          }
-          
-          return match;
-        });
+        setKetQuaTraCuu(formattedData);
         
-        setKetQuaTraCuu(result as T[]);
-        setLoading(false);
-        
-        if (result.length > 0) {
-          message.success(`Đã tìm thấy ${result.length} kết quả`);
-          return true;
+        if (formattedData.length === 0) {
+          message.info('Không tìm thấy văn bằng phù hợp');
         } else {
-          message.info('Không tìm thấy kết quả phù hợp');
-          return false;
+          message.success(`Đã tìm thấy ${formattedData.length} văn bằng`);
         }
-      }, 1000);
-      
-      return true;
-    } catch (error) {
-      console.error('Lỗi khi tra cứu:', error);
-      message.error('Có lỗi xảy ra khi tra cứu văn bằng');
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi tìm kiếm');
+        setKetQuaTraCuu([]);
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        message.error(error.response.data.message);
+      } else {
+        message.error('Không thể kết nối đến server');
+      }
+      console.error(error);
       setKetQuaTraCuu([]);
+    } finally {
       setLoading(false);
-      return false;
     }
   };
 
   // Hàm xem chi tiết văn bằng và ghi nhận lượt tra cứu
-  const xemChiTietVanBang = (vanBang: T) => {
+  const xemChiTietVanBang = async (vanBang: TraCuuVanBang) => {
     setVanBangSelected(vanBang);
     setVisibleDetail(true);
     
-    // Ghi nhận lượt tra cứu và cập nhật thống kê
-    ghiNhanLuotTraCuu(vanBang);
-  };
-
-  // Hàm ghi nhận lượt tra cứu
-  const ghiNhanLuotTraCuu = (vanBang: T) => {
-    // Tăng lượt tra cứu cho văn bằng 
-    const updatedVanBang = {
-      ...vanBang,
-      luotTraCuu: vanBang.luotTraCuu + 1,
-    };
-
-    // Cập nhật danh sách kết quả tra cứu
-    setKetQuaTraCuu(prev => 
-      prev.map(item => (item.id === updatedVanBang.id ? updatedVanBang as T : item))
-    );
-
-    // Tìm quyết định để cập nhật lượt tra cứu
-    const quyetDinhIndex = danhSachQuyetDinh.findIndex(qd => qd.id === vanBang.quyetDinhId);
-    
-    if (quyetDinhIndex !== -1) {
-      // Tạo bản sao của danh sách
-      const updatedDanhSachQuyetDinh = [...danhSachQuyetDinh];
-      
-      // Cập nhật lượt tra cứu cho quyết định
-      updatedDanhSachQuyetDinh[quyetDinhIndex] = {
-        ...updatedDanhSachQuyetDinh[quyetDinhIndex],
-        luotTraCuu: updatedDanhSachQuyetDinh[quyetDinhIndex].luotTraCuu + 1,
-      };
-      
-      setDanhSachQuyetDinh(updatedDanhSachQuyetDinh);
-      
-      // Cập nhật dữ liệu thống kê
-      updateThongKeTraCuu(updatedDanhSachQuyetDinh);
+    // Ghi nhận lượt tra cứu
+    try {
+      await LuotTraCuuService.create(vanBang.id, vanBang.quyetDinhId);
+    } catch (error) {
+      console.error('Lỗi khi ghi nhận lượt tra cứu:', error);
     }
   };
 
-  // Hàm cập nhật thống kê tra cứu
-  const updateThongKeTraCuu = (quyetDinhs: QuyetDinhTotNghiep[]) => {
-    const thongKe = quyetDinhs.map(qd => ({
-      quyetDinh: qd.soQuyetDinh,
-      luotTraCuu: qd.luotTraCuu,
-    }));
-    
-    setThongKeTraCuu(thongKe);
+  // Reset form tìm kiếm
+  const resetTraCuu = () => {
+    setKetQuaTraCuu([]);
+    setVanBangSelected(null);
+    setHasSearched(false);
   };
 
   // Hàm tải danh sách quyết định 
@@ -318,6 +160,16 @@ export function useInitModel<T extends TraCuuVanBang>() {
     }, 1000);
   };
 
+  // Hàm cập nhật thống kê tra cứu
+  const updateThongKeTraCuu = (quyetDinhs: QuyetDinhTotNghiep[]) => {
+    const thongKe = quyetDinhs.map(qd => ({
+      quyetDinh: qd.soQuyetDinh,
+      luotTraCuu: qd.luotTraCuu,
+    }));
+    
+    setThongKeTraCuu(thongKe);
+  };
+
   return {
     ketQuaTraCuu,
     setKetQuaTraCuu,
@@ -330,8 +182,11 @@ export function useInitModel<T extends TraCuuVanBang>() {
     visibleDetail,
     setVisibleDetail,
     thongKeTraCuu,
+    hasSearched,
+    setHasSearched,
     traCuuVanBang,
     xemChiTietVanBang,
+    resetTraCuu,
     loadQuyetDinhTotNghiep,
   };
 } 

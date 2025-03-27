@@ -49,7 +49,7 @@ class VanBangController {
     async search(req, res) {
         try {
             const searchParams = req.body;
-            
+            console.log(req.body);
             // Đếm số tham số tìm kiếm
             const paramCount = Object.values(searchParams).filter(value => value).length;
             if (paramCount < 2) {

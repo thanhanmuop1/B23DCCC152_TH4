@@ -1,44 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Row, Col, Table, Button, Space, Card, Typography, Drawer, Empty } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
-import { useInitModel, TraCuuVanBang, TraCuuParams } from '../../../models/Vanbang/tracuuvanbang';
-import TraCuuForm from './components/TraCuuForm';
-import ChiTietVanBang from './components/ChiTietVanBang';
+import { 
+  Card, 
+  Form, 
+  Input, 
+  Button, 
+  DatePicker, 
+  Table, 
+  Divider, 
+  Typography, 
+  Row, 
+  Col, 
+  Space, 
+  Empty, 
+  Spin,
+  Tooltip 
+} from 'antd';
+import { SearchOutlined, EyeOutlined, ClearOutlined } from '@ant-design/icons';
 import moment from 'moment';
-import 'moment/locale/vi';
+import { useInitModel, TraCuuVanBang, TraCuuFormParams } from '@/models/Vanbang/tracuuvanbang';
+import VanBangDetail from './components/VanBangDetail';
+import styles from './index.less';
 
-moment.locale('vi');
 const { Title } = Typography;
 
 const TraCuuVanBangPage: React.FC = () => {
   const {
     ketQuaTraCuu,
-    setKetQuaTraCuu,
     vanBangSelected,
     setVanBangSelected,
     loading,
-    setLoading,
-    danhSachQuyetDinh,
     visibleDetail,
     setVisibleDetail,
-    thongKeTraCuu,
+    hasSearched,
     traCuuVanBang,
     xemChiTietVanBang,
-    loadQuyetDinhTotNghiep,
-  } = useInitModel<TraCuuVanBang>();
+    resetTraCuu
+  } = useInitModel();
 
-  const [hasSearched, setHasSearched] = useState<boolean>(false);
-
-  // Tải dữ liệu quyết định khi component được tạo
-  useEffect(() => {
-    loadQuyetDinhTotNghiep();
-  }, []);
+  const [form] = Form.useForm();
 
   // Xử lý tra cứu
-  const handleTraCuu = (params: TraCuuParams) => {
-    setHasSearched(true);
-    traCuuVanBang(params);
+  const handleTraCuu = (values: TraCuuFormParams) => {
+    // Xử lý date format nếu có
+    if (values.ngaySinh) {
+      values.ngaySinh = moment(values.ngaySinh).format('YYYY-MM-DD');
+    }
+    
+    traCuuVanBang(values);
+  };
+
+  // Xử lý reset form
+  const handleReset = () => {
+    form.resetFields();
+    resetTraCuu();
   };
 
   // Định nghĩa cột cho bảng kết quả tra cứu
@@ -83,76 +98,137 @@ const TraCuuVanBangPage: React.FC = () => {
     },
     {
       title: 'Quyết định',
-      dataIndex: 'tenQuyetDinh',
-      key: 'tenQuyetDinh',
+      dataIndex: 'soQuyetDinh',
+      key: 'soQuyetDinh',
       width: 150,
     },
     {
       title: 'Thao tác',
       key: 'action',
       width: 100,
-      render: (_text: any, record: TraCuuVanBang) => (
-        <Button
-          type="primary"
-          icon={<EyeOutlined />}
-          onClick={() => xemChiTietVanBang(record)}
-        >
-          Chi tiết
-        </Button>
+      render: (_: any, record: TraCuuVanBang) => (
+        <Tooltip title="Xem chi tiết">
+          <Button 
+            type="primary" 
+            icon={<EyeOutlined />} 
+            onClick={() => xemChiTietVanBang(record)} 
+          />
+        </Tooltip>
       ),
     },
   ];
 
   return (
-    <PageContainer title="Tra cứu văn bằng">
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={12} lg={8}>
-          {/* Form tra cứu */}
-          <TraCuuForm onTraCuu={handleTraCuu} loading={loading} />
-        </Col>
+    <PageContainer>
+      <Card>
+        <Title level={4}>Tra cứu văn bằng</Title>
+        <Divider />
         
-        <Col xs={24} md={12} lg={16}>
-          {/* Kết quả tra cứu */}
-          <Card>
-            <Title level={4}>Kết quả tra cứu</Title>
-            
-            {hasSearched ? (
-              <Table
-                columns={columns}
-                dataSource={ketQuaTraCuu}
-                rowKey="id"
-                bordered
-                loading={loading}
-                pagination={{ 
-                  pageSize: 5, 
-                  showTotal: (total) => `Tổng cộng ${total} văn bằng`
-                }}
-                locale={{
-                  emptyText: <Empty description="Không tìm thấy kết quả phù hợp" />
-                }}
-              />
-            ) : (
-              <Empty description="Vui lòng nhập thông tin để tra cứu văn bằng" />
-            )}
-          </Card>
-        </Col>
-      </Row>
+        <Form 
+          form={form}
+          layout="vertical" 
+          onFinish={handleTraCuu}
+        >
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item 
+                label="Số hiệu văn bằng" 
+                name="soHieuVanBang"
+              >
+                <Input placeholder="Nhập số hiệu văn bằng" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                label="Số vào sổ" 
+                name="soVaoSo"
+              >
+                <Input type="number" placeholder="Nhập số vào sổ" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                label="Mã sinh viên" 
+                name="maSinhVien"
+              >
+                <Input placeholder="Nhập mã sinh viên" />
+              </Form.Item>
+            </Col>
+          </Row>
+          
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item 
+                label="Họ tên" 
+                name="hoTen"
+              >
+                <Input placeholder="Nhập họ tên" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item 
+                label="Ngày sinh" 
+                name="ngaySinh"
+              >
+                <DatePicker 
+                  style={{ width: '100%' }} 
+                  format="DD/MM/YYYY" 
+                  placeholder="Chọn ngày sinh"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8} style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <Space>
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  icon={<SearchOutlined />} 
+                  loading={loading}
+                >
+                  Tra cứu
+                </Button>
+                <Button 
+                  icon={<ClearOutlined />} 
+                  onClick={handleReset}
+                >
+                  Làm mới
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Form>
+        
+        <Divider />
+        
+        <Spin spinning={loading}>
+          {hasSearched ? (
+            <>
+              <Title level={5}>Kết quả tra cứu ({ketQuaTraCuu.length} văn bằng)</Title>
+              {ketQuaTraCuu.length > 0 ? (
+                <Table 
+                  columns={columns} 
+                  dataSource={ketQuaTraCuu} 
+                  rowKey="id"
+                  pagination={{ pageSize: 10 }}
+                  scroll={{ x: 1000 }}
+                />
+              ) : (
+                <Empty description="Không tìm thấy văn bằng nào phù hợp" />
+              )}
+            </>
+          ) : (
+            <Empty description="Vui lòng nhập ít nhất 2 thông tin để tra cứu" />
+          )}
+        </Spin>
+      </Card>
 
-      {/* Drawer xem chi tiết */}
-      <Drawer
-        title="Chi tiết văn bằng"
-        width={700}
-        placement="right"
-        onClose={() => setVisibleDetail(false)}
-        visible={visibleDetail}
-      >
-        {vanBangSelected && (
-          <ChiTietVanBang 
-            vanBang={vanBangSelected} 
-            danhSachQuyetDinh={danhSachQuyetDinh} 
-          />
-        )}
-      </Drawer>
+      {vanBangSelected && (
+        <VanBangDetail 
+          visible={visibleDetail} 
+          vanBang={vanBangSelected} 
+          onClose={() => setVisibleDetail(false)} 
+        />
+      )}
     </PageContainer>
   );
 };
