@@ -1,46 +1,49 @@
 import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select, Checkbox } from 'antd';
-import { TruongThongTin } from '../../../../models/Vanbang/truongthongtin';
+import type { TruongThongTin } from '@/models/Vanbang/truongthongtin';
 
 interface TruongThongTinModalProps {
-  open: boolean;
-  type: 'add' | 'edit';
-  truongThongTinSelected: TruongThongTin | null;
+  visible: boolean;
   onCancel: () => void;
   onSubmit: (values: any) => void;
+  loading: boolean;
+  modalType: 'add' | 'edit';
+  initialValues?: TruongThongTin;
 }
 
 const TruongThongTinModal: React.FC<TruongThongTinModalProps> = ({
-  open,
-  type,
-  truongThongTinSelected,
+  visible,
   onCancel,
   onSubmit,
+  loading,
+  modalType,
+  initialValues,
 }) => {
   const [form] = Form.useForm();
 
   // Reset form khi mở modal
   useEffect(() => {
-    if (open) {
+    if (visible) {
       form.resetFields();
       
       // Nếu là edit thì điền dữ liệu vào form
-      if (type === 'edit' && truongThongTinSelected) {
+      if (modalType === 'edit' && initialValues) {
         form.setFieldsValue({
-          ...truongThongTinSelected,
+          ten_truong: initialValues.ten_truong,
+          kieu_du_lieu: initialValues.kieu_du_lieu
         });
       }
     }
-  }, [open, type, truongThongTinSelected, form]);
+  }, [visible, modalType, initialValues, form]);
 
   // Xử lý submit form
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+      console.log(values);
       // Nếu là edit thì giữ lại id
-      if (type === 'edit' && truongThongTinSelected) {
-        values.id = truongThongTinSelected.id;
+      if (modalType === 'edit' && initialValues) {
+        values.id = initialValues.id;
       }
       
       onSubmit(values);
@@ -49,40 +52,43 @@ const TruongThongTinModal: React.FC<TruongThongTinModalProps> = ({
     }
   };
 
-  const title = type === 'add' ? 'Thêm trường thông tin mới' : 'Cập nhật trường thông tin';
+  const title = modalType === 'add' ? 'Thêm trường thông tin' : 'Cập nhật trường thông tin';
 
   return (
     <Modal
       title={title}
-      visible={open}
-      onCancel={onCancel}
+      visible={visible}
       onOk={handleSubmit}
-      okText={type === 'add' ? 'Thêm mới' : 'Cập nhật'}
-      cancelText="Hủy"
+      onCancel={onCancel}
+      confirmLoading={loading}
       destroyOnClose
     >
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ kieuDuLieu: 'String', batBuoc: false }}
+        initialValues={initialValues ? {
+          ten_truong: initialValues.ten_truong,
+          kieu_du_lieu: initialValues.kieu_du_lieu
+        } : undefined}
+        onFinish={handleSubmit}
       >
         <Form.Item
-          name="tenTruong"
+          name="ten_truong"
           label="Tên trường"
-          rules={[{ required: true, message: 'Vui lòng nhập tên trường!' }]}
+          rules={[{ required: true, message: 'Vui lòng nhập tên trường' }]}
         >
-          <Input placeholder="Nhập tên trường thông tin" />
+          <Input />
         </Form.Item>
 
         <Form.Item
-          name="kieuDuLieu"
+          name="kieu_du_lieu"
           label="Kiểu dữ liệu"
-          rules={[{ required: true, message: 'Vui lòng chọn kiểu dữ liệu!' }]}
+          rules={[{ required: true, message: 'Vui lòng chọn kiểu dữ liệu' }]}
         >
           <Select>
-            <Select.Option value="String">String (Chuỗi)</Select.Option>
-            <Select.Option value="Number">Number (Số)</Select.Option>
-            <Select.Option value="Date">Date (Ngày tháng)</Select.Option>
+            <Select.Option value="String">Chuỗi</Select.Option>
+            <Select.Option value="Number">Số</Select.Option>
+            <Select.Option value="Date">Ngày tháng</Select.Option>
           </Select>
         </Form.Item>
 

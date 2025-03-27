@@ -9,6 +9,7 @@ import type { TableColumnsType } from 'antd';
 import { useInitModel, TruongThongTin } from '../../../models/Vanbang/truongthongtin';
 import TruongThongTinModal from './components/TruongThongTinModal';
 import TruongThongTinDetail from './components/TruongThongTinDetail';
+import TruongThongTinService from '@/services/TruongThongTin';
 
 const TruongThongTinPage: React.FC = () => {
   const {
@@ -25,80 +26,52 @@ const TruongThongTinPage: React.FC = () => {
     themTruongThongTin,
     capNhatTruongThongTin,
     xoaTruongThongTin,
-    timKiemTruongThongTin,
+    fetchDanhSachTruongThongTin,
   } = useInitModel<TruongThongTin>();
 
   const [visibleDetail, setVisibleDetail] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
 
-  // Giả lập dữ liệu ban đầu
+  // Lấy dữ liệu từ API khi component mount
   useEffect(() => {
-    // Tạo dữ liệu mẫu
-    const mockData: TruongThongTin[] = [
-      {
-        id: '1',
-        tenTruong: 'Họ và tên',
-        kieuDuLieu: 'String',
-        batBuoc: true,
-      },
-      {
-        id: '2',
-        tenTruong: 'Ngày sinh',
-        kieuDuLieu: 'Date',
-        batBuoc: true,
-      },
-      {
-        id: '3',
-        tenTruong: 'Điểm trung bình',
-        kieuDuLieu: 'Number',
-        batBuoc: false,
-      },
-      {
-        id: '4',
-        tenTruong: 'Nơi sinh',
-        kieuDuLieu: 'String',
-        batBuoc: false,
-      },
-    ];
-    
-    setDanhSachTruongThongTin(mockData);
-  }, [setDanhSachTruongThongTin]);
+    fetchDanhSachTruongThongTin();
+  }, []);
 
   // Hàm xử lý tìm kiếm
-  const handleSearch = (value: string) => {
+  const handleSearch = async (value: string) => {
     setSearchValue(value);
-    if (value.trim() === '') {
-      // Giả lập reload lại dữ liệu ban đầu
-      const mockData: TruongThongTin[] = [
-        {
-          id: '1',
-          tenTruong: 'Họ và tên',
-          kieuDuLieu: 'String',
-          batBuoc: true,
-        },
-        {
-          id: '2',
-          tenTruong: 'Ngày sinh',
-          kieuDuLieu: 'Date',
-          batBuoc: true,
-        },
-        {
-          id: '3',
-          tenTruong: 'Điểm trung bình',
-          kieuDuLieu: 'Number',
-          batBuoc: false,
-        },
-        {
-          id: '4',
-          tenTruong: 'Nơi sinh',
-          kieuDuLieu: 'String',
-          batBuoc: false,
-        },
-      ];
-      setDanhSachTruongThongTin(mockData);
-    } else {
-      const results = timKiemTruongThongTin(value);
-      setDanhSachTruongThongTin(results as TruongThongTin[]);
+    setLoading(true);
+    
+    try {
+      if (value.trim() === '') {
+        // Nếu không có giá trị tìm kiếm, lấy lại toàn bộ danh sách
+        await fetchDanhSachTruongThongTin();
+      } else {
+        // Gọi API tìm kiếm
+        const response = await TruongThongTinService.getList();
+        console.log(response);
+        if (response.data.success) {
+          // Lọc dữ liệu trả về theo tên trường
+          const filteredData = response.data.data.filter((item: any) => 
+            item.ten_truong.toLowerCase().includes(value.toLowerCase())
+          );
+          
+          // Chuẩn hóa dữ liệu để phù hợp với interface TruongThongTin
+          const formattedData = filteredData.map((item: any) => ({
+            id: item.id,
+            ten_truong: item.ten_truong,
+            kieu_du_lieu: item.kieu_du_lieu,
+            batBuoc: false // Giả định, có thể cập nhật nếu API trả về trường này
+          }));
+          
+          setDanhSachTruongThongTin(formattedData);
+        }
+      }
+    } catch (error) {
+      message.error('Lỗi khi tìm kiếm dữ liệu');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -117,13 +90,30 @@ const TruongThongTinPage: React.FC = () => {
   };
 
   // Xử lý submit form modal
-  const handleSubmitModal = (values: any) => {
-    if (modalType === 'add') {
-      themTruongThongTin(values);
-    } else {
-      capNhatTruongThongTin(values as TruongThongTin);
+  const handleSubmitModal = async (values: any) => {
+    try {
+      if (modalType === 'add') {
+        // Chuyển đổi dữ liệu để phù hợp với API
+        const dataToSubmit = {
+          ten_truong: values.ten_truong,
+          kieu_du_lieu: values.kieu_du_lieu
+        };
+        await themTruongThongTin(dataToSubmit);
+      } else if (truongThongTinSelected) {
+        // Chuyển đổi dữ liệu để phù hợp với API
+        const dataToUpdate = {
+          id: parseInt(truongThongTinSelected.id),
+          ten_truong: values.ten_truong,
+          kieu_du_lieu: values.kieu_du_lieu
+        };
+        await capNhatTruongThongTin(dataToUpdate);
+      }
+      setVisibleModal(false);
+      await fetchDanhSachTruongThongTin(); // Refresh lại dữ liệu
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi xử lý dữ liệu');
+      console.error(error);
     }
-    setVisibleModal(false);
   };
 
   // Mở drawer xem chi tiết
@@ -157,27 +147,16 @@ const TruongThongTinPage: React.FC = () => {
     },
     {
       title: 'Tên trường',
-      dataIndex: 'tenTruong',
-      key: 'tenTruong',
+      dataIndex: 'ten_truong',
+      key: 'ten_truong',
       width: 250,
     },
     {
       title: 'Kiểu dữ liệu',
-      dataIndex: 'kieuDuLieu',
-      key: 'kieuDuLieu',
+      dataIndex: 'kieu_du_lieu',
+      key: 'kieu_du_lieu',
       width: 180,
       render: (value) => renderKieuDuLieu(value),
-    },
-    {
-      title: 'Bắt buộc',
-      dataIndex: 'batBuoc',
-      key: 'batBuoc',
-      width: 120,
-      render: (value) => value ? (
-        <Badge status="success" text="Có" />
-      ) : (
-        <Badge status="default" text="Không" />
-      ),
     },
     {
       title: 'Thao tác',
@@ -197,7 +176,7 @@ const TruongThongTinPage: React.FC = () => {
           />
           <Popconfirm
             title="Bạn có chắc chắn muốn xóa trường thông tin này?"
-            onConfirm={() => xoaTruongThongTin(record.id)}
+            onConfirm={() => xoaTruongThongTin(parseInt(record.id))}
             okText="Xóa"
             cancelText="Hủy"
           >
@@ -221,7 +200,7 @@ const TruongThongTinPage: React.FC = () => {
         options={{
           density: true,
           fullScreen: true,
-          reload: false,
+          reload: () => fetchDanhSachTruongThongTin(),
           setting: true,
         }}
         toolbar={{
@@ -254,9 +233,9 @@ const TruongThongTinPage: React.FC = () => {
 
       {/* Modal thêm/sửa trường thông tin */}
       <TruongThongTinModal
-        open={visibleModal}
-        type={modalType}
-        truongThongTinSelected={truongThongTinSelected}
+        visible={visibleModal}
+        modalType={modalType}
+        initialValues={truongThongTinSelected}
         onCancel={() => setVisibleModal(false)}
         onSubmit={handleSubmitModal}
       />
@@ -267,7 +246,7 @@ const TruongThongTinPage: React.FC = () => {
         width={600}
         placement="right"
         onClose={() => setVisibleDetail(false)}
-        visible={visibleDetail}
+        open={visibleDetail}
       >
         {truongThongTinSelected && (
           <TruongThongTinDetail truongThongTin={truongThongTinSelected} />
