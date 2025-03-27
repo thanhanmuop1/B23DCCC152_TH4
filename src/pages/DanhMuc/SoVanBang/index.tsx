@@ -31,24 +31,9 @@ const SoVanBangPage: React.FC = () => {
   const [visibleDetail, setVisibleDetail] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
 
-  // Giả lập dữ liệu ban đầu
-  useEffect(() => {
-    // Tạo dữ liệu mẫu
-    const mockData: SoVanBang[] = [
-      {
-        id: '1',
-        nam: 2022,
-        so_hien_tai: 145,
-      },
-      {
-        id: '2',
-        nam: 2023,
-        so_hien_tai: 67,
-      },
-    ];
+  
     
-    setDanhSachSoVanBang(mockData);
-  }, [setDanhSachSoVanBang]);
+
 
   // Hàm xử lý tìm kiếm
   const handleSearch = (value: string) => {
