@@ -2,7 +2,7 @@
 CREATE TABLE SoVanBang (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- Khóa chính
     nam INT NOT NULL UNIQUE,                 -- Năm (duy nhất)
-    so_hien_tai INT DEFAULT 1                -- Số vào sổ hiện tại (reset mỗi năm)
+    so_hien_tai INT DEFAULT 0                -- Số vào sổ hiện tại (reset mỗi năm)
 );
 
 -- 2. Bảng QuyetDinhTotNghiep (Quyết định tốt nghiệp)
