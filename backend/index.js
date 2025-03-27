@@ -3,7 +3,7 @@ const cors = require('cors');
 const quyetDinhRoutes = require('./routes/quyetDinhRoutes');
 const soVanBangRoutes = require('./routes/soVanBangRoutes');
 const truongThongTinRoutes = require('./routes/truongThongTin');
-
+const vanBangRoutes = require('./routes/vanBangRoutes');
 const app = express();
 
 // Middleware
@@ -14,6 +14,7 @@ app.use(express.json());
 app.use('/api/quyetdinh', quyetDinhRoutes);
 app.use('/api/sovanbang', soVanBangRoutes);
 app.use('/api/truongthongtin', truongThongTinRoutes);
+app.use('/api/vanbang', vanBangRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
 	console.error(err.stack);
