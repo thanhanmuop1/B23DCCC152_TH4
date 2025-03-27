@@ -1,4 +1,4 @@
-const TruongThongTin = require('../../models/TruongThongTin');
+const TruongThongTin = require('../models/TruongThongTin');
 
 // Lấy tất cả trường thông tin
 exports.getAllTruongThongTin = async (req, res) => {

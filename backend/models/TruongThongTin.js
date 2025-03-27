@@ -1,4 +1,4 @@
-const db = require('../configs/db');
+const db = require('../configs/database');
 
 class TruongThongTin {
 	// Lấy tất cả trường thông tin
