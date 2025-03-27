@@ -78,7 +78,7 @@ const SoVanBangPage: React.FC = () => {
     if (modalType === 'add') {
       themSoVanBang(values);
     } else {
-      capNhatSoVanBang(values as SoVanBang);
+      capNhatSoVanBang(values.id, values);
     }
     setVisibleModal(false);
   };
@@ -106,8 +106,8 @@ const SoVanBangPage: React.FC = () => {
     },
     {
       title: 'Số hiện tại',
-      dataIndex: 'so_hien_tai',
-      key: 'so_hien_tai',
+      dataIndex: 'soHienTai',
+      key: 'soHienTai',
       width: 120,
     },
     {

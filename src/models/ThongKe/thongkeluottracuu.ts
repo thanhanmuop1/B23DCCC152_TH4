@@ -1,126 +1,173 @@
 import { useState, useEffect } from 'react';
+import { message } from 'antd';
+import LuotTraCuuService from '@/services/LuotTraCuu';
 
-// Định nghĩa kiểu dữ liệu cho thống kê tổng quan
-export interface TongQuanThongKe {
-  tongSoVanBang: number;
-  phanTramThayDoiVanBang: number;
-  soSoVanBang: number;
-  soSoMoi: number;
-  soQuyetDinh: number;
-  quyetDinhMoi: number;
+// Định nghĩa kiểu dữ liệu cho thống kê
+export interface ThongKeTraCuu {
+  quyetDinh: string;
   luotTraCuu: number;
-  phanTramThayDoiTraCuu: number;
 }
 
-// Kiểu dữ liệu cho biểu đồ lượt tra cứu theo thời gian
-export interface LuotTraCuuTheoThang {
+export interface ThongKeTheoThang {
   thang: string;
   luotTraCuu: number;
 }
 
-// Kiểu dữ liệu cho biểu đồ văn bằng theo quyết định
-export interface VanBangTheoQuyetDinh {
+export interface ThongKeVanBang {
   quyetDinh: string;
   soLuong: number;
 }
 
-// Hook quản lý state và logic cho thống kê
+export interface TongQuanThongKe {
+  tongSoVanBang: number;
+  soSoVanBang: number;
+  soQuyetDinh: number;
+  luotTraCuu: number;
+  phanTramThayDoiVanBang: number;
+  phanTramThayDoiTraCuu: number;
+  soSoMoi: number;
+  quyetDinhMoi: number;
+}
+
+// Hook để quản lý state và logic cho thống kê
 export function useThongKeModel() {
+  // State cho thống kê
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [luotTraCuuTheoThang, setLuotTraCuuTheoThang] = useState<ThongKeTheoThang[]>([]);
+  const [vanBangTheoQuyetDinh, setVanBangTheoQuyetDinh] = useState<ThongKeVanBang[]>([]);
   const [tongQuan, setTongQuan] = useState<TongQuanThongKe>({
     tongSoVanBang: 0,
-    phanTramThayDoiVanBang: 0,
     soSoVanBang: 0,
-    soSoMoi: 0,
     soQuyetDinh: 0,
-    quyetDinhMoi: 0,
     luotTraCuu: 0,
-    phanTramThayDoiTraCuu: 0
+    phanTramThayDoiVanBang: 0,
+    phanTramThayDoiTraCuu: 0,
+    soSoMoi: 0,
+    quyetDinhMoi: 0
   });
 
-  const [luotTraCuuTheoThang, setLuotTraCuuTheoThang] = useState<LuotTraCuuTheoThang[]>([]);
-  const [vanBangTheoQuyetDinh, setVanBangTheoQuyetDinh] = useState<VanBangTheoQuyetDinh[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Hàm tải dữ liệu thống kê tổng quan
-  const loadThongKeTongQuan = () => {
+  // Lấy tổng quan thống kê
+  const fetchTongQuanThongKe = async () => {
     setIsLoading(true);
-
-    // Giả lập API call
-    setTimeout(() => {
-      // Dữ liệu mẫu
-      const mockData: TongQuanThongKe = {
-        tongSoVanBang: 1234,
-        phanTramThayDoiVanBang: 12,
-        soSoVanBang: 8,
-        soSoMoi: 2,
-        soQuyetDinh: 15,
-        quyetDinhMoi: 1,
-        luotTraCuu: 578,
-        phanTramThayDoiTraCuu: -5
-      };
-
-      setTongQuan(mockData);
+    try {
+      const response = await LuotTraCuuService.getTongQuanThongKe();
+      
+      if (response.data.success) {
+        const data = response.data.data;
+        
+        // Tạm thời gán một số thông tin giả lập vì API chưa trả về đầy đủ
+        setTongQuan({
+          tongSoVanBang: 345, // Giả lập
+          soSoVanBang: 5, // Giả lập
+          soQuyetDinh: 12, // Giả lập
+          luotTraCuu: data.tong_luot_tra_cuu,
+          phanTramThayDoiVanBang: 8, // Giả lập
+          phanTramThayDoiTraCuu: data.quyet_dinh_nhieu_nhat ? 15 : 0, // Giả lập
+          soSoMoi: 1, // Giả lập
+          quyetDinhMoi: 3 // Giả lập
+        });
+      } else {
+        message.error('Có lỗi xảy ra khi tải dữ liệu tổng quan');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải tổng quan thống kê:', error);
+      message.error('Không thể kết nối đến server');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  // Hàm tải dữ liệu lượt tra cứu theo thời gian
-  const loadLuotTraCuuTheoThang = () => {
+  // Lấy thống kê lượt tra cứu theo thời gian
+  const fetchLuotTraCuuTheoThang = async () => {
     setIsLoading(true);
-
-    // Giả lập API call
-    setTimeout(() => {
-      // Dữ liệu mẫu cho 7 tháng gần đây
-      const mockData: LuotTraCuuTheoThang[] = [
-        { thang: 'Jan', luotTraCuu: 10 },
-        { thang: 'Feb', luotTraCuu: 20 },
-        { thang: 'Mar', luotTraCuu: 15 },
-        { thang: 'Apr', luotTraCuu: 25 },
-        { thang: 'May', luotTraCuu: 22 },
-        { thang: 'Jun', luotTraCuu: 30 },
-        { thang: 'Jul', luotTraCuu: 28 }
-      ];
-
-      setLuotTraCuuTheoThang(mockData);
+    try {
+      // Tính toán 7 tháng gần đây
+      const today = new Date();
+      const sevenMonthsAgo = new Date(today);
+      sevenMonthsAgo.setMonth(today.getMonth() - 6);
+      
+      const tuNgay = sevenMonthsAgo.toISOString().split('T')[0];
+      const denNgay = today.toISOString().split('T')[0];
+      
+      const response = await LuotTraCuuService.getThongKeTheoThoiGian(tuNgay, denNgay);
+      
+      if (response.data.success) {
+        // Chuyển đổi dữ liệu theo ngày thành dữ liệu theo tháng
+        const dataByDay = response.data.data;
+        const dataByMonth: Record<string, number> = {};
+        
+        // Tạo cấu trúc dữ liệu cho 7 tháng gần đây
+        for (let i = 0; i <= 6; i++) {
+          const date = new Date(today);
+          date.setMonth(today.getMonth() - i);
+          const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
+          dataByMonth[monthKey] = 0;
+        }
+        
+        // Tổng hợp dữ liệu theo tháng
+        dataByDay.forEach((item) => {
+          const date = new Date(item.ngay);
+          const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
+          dataByMonth[monthKey] = (dataByMonth[monthKey] || 0) + item.so_luot_tra_cuu;
+        });
+        
+        // Chuyển đổi sang dạng mảng để hiển thị biểu đồ
+        const formattedData = Object.keys(dataByMonth).map(key => ({
+          thang: key,
+          luotTraCuu: dataByMonth[key]
+        })).reverse(); // Sắp xếp từ tháng cũ đến tháng mới
+        
+        setLuotTraCuuTheoThang(formattedData);
+      } else {
+        message.error('Có lỗi xảy ra khi tải dữ liệu thống kê theo thời gian');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải thống kê lượt tra cứu theo thời gian:', error);
+      message.error('Không thể kết nối đến server');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  // Hàm tải dữ liệu văn bằng theo quyết định
-  const loadVanBangTheoQuyetDinh = () => {
+  // Lấy thống kê lượt tra cứu theo quyết định
+  const fetchThongKeTheoQuyetDinh = async () => {
     setIsLoading(true);
-
-    // Giả lập API call
-    setTimeout(() => {
-      // Dữ liệu mẫu
-      const mockData: VanBangTheoQuyetDinh[] = [
-        { quyetDinh: 'QĐ 001', soLuong: 45 },
-        { quyetDinh: 'QĐ 002', soLuong: 30 },
-        { quyetDinh: 'QĐ 003', soLuong: 25 },
-        { quyetDinh: 'QĐ 004', soLuong: 60 },
-        { quyetDinh: 'QĐ 005', soLuong: 20 }
-      ];
-
-      setVanBangTheoQuyetDinh(mockData);
+    try {
+      const response = await LuotTraCuuService.getThongKeTheoQuyetDinh();
+      
+      if (response.data.success) {
+        const formattedData = response.data.data.map(item => ({
+          quyetDinh: item.so_quyet_dinh,
+          soLuong: item.so_luot_tra_cuu
+        }));
+        
+        setVanBangTheoQuyetDinh(formattedData);
+      } else {
+        message.error('Có lỗi xảy ra khi tải dữ liệu thống kê theo quyết định');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải thống kê theo quyết định:', error);
+      message.error('Không thể kết nối đến server');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  // Hàm tải tất cả dữ liệu
+  // Tải tất cả dữ liệu thống kê
   const loadAllData = () => {
-    loadThongKeTongQuan();
-    loadLuotTraCuuTheoThang();
-    loadVanBangTheoQuyetDinh();
+    fetchTongQuanThongKe();
+    fetchLuotTraCuuTheoThang();
+    fetchThongKeTheoQuyetDinh();
   };
 
   return {
-    tongQuan,
+    isLoading,
     luotTraCuuTheoThang,
     vanBangTheoQuyetDinh,
-    isLoading,
-    loadThongKeTongQuan,
-    loadLuotTraCuuTheoThang,
-    loadVanBangTheoQuyetDinh,
+    tongQuan,
+    fetchTongQuanThongKe,
+    fetchLuotTraCuuTheoThang,
+    fetchThongKeTheoQuyetDinh,
     loadAllData
   };
 } 

@@ -84,7 +84,7 @@ class VanBangController {
     async create(req, res) {
         try {
             const { vanBang, truongDong } = req.body;
-            
+            console.log(req.body);
             // Validate dữ liệu đầu vào
             if (!vanBang || !vanBang.so_hieu_van_bang || !vanBang.ma_sinh_vien || 
                 !vanBang.ho_ten || !vanBang.ngay_sinh || !vanBang.quyet_dinh_id) {

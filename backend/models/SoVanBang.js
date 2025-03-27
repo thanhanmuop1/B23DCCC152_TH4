@@ -73,23 +73,6 @@ class SoVanBang {
         return rows[0];
     }
 
-    // Tăng số hiện tại
-    static async incrementCurrentNumber(id) {
-        const query = `
-            UPDATE SoVanBang 
-            SET so_hien_tai = so_hien_tai + 1
-            WHERE id = ?
-        `;
-        await db.execute(query, [id]);
-        
-        // Trả về số hiện tại mới
-        const [result] = await db.execute(
-            'SELECT so_hien_tai as soHienTai FROM SoVanBang WHERE id = ?',
-            [id]
-        );
-        return result[0].soHienTai;
-    }
-
     // Lấy hoặc tạo sổ văn bằng cho năm hiện tại
     static async getOrCreateCurrentBook() {
         const currentYear = new Date().getFullYear();
@@ -105,32 +88,31 @@ class SoVanBang {
         return book;
     }
 
-    // Kiểm tra và tạo số hiệu văn bằng
-    static async generateDegreeNumber(soVanBangId) {
-        const [soInfo] = await db.execute(
-            'SELECT nam, so_hien_tai FROM SoVanBang WHERE id = ?',
-            [soVanBangId]
-        );
-        
-        if (!soInfo[0]) {
-            throw new Error('Không tìm thấy sổ văn bằng');
-        }
+    //Cập nhật năm sổ văn bằng
+    static async updateNamSoVanBang(id, nam) {
+        const query = `UPDATE SoVanBang SET nam = ? WHERE id = ?`;
+        await db.execute(query, [nam, id]);
+        return {
+            success: true,
+            message: 'Cập nhật năm sổ văn bằng thành công',
+            data: {
+                nam: nam
+            }
+        };
 
-        // Format: [Năm][Số thứ tự 6 chữ số]
-        // Ví dụ: 2024000001
-        const soHieu = `${soInfo[0].nam}${String(soInfo[0].so_hien_tai).padStart(6, '0')}`;
-        
-        // Kiểm tra trùng lặp
-        const [existing] = await db.execute(
-            'SELECT id FROM VanBang WHERE so_hieu_van_bang = ?',
-            [soHieu]
-        );
+    }
 
-        if (existing.length > 0) {
-            throw new Error('Số hiệu văn bằng đã tồn tại');
-        }
-
-        return soHieu;
+    //Xóa năm sổ văn bằng
+    static async deleteNamSoVanBang(id) {
+        const query = `DELETE FROM SoVanBang WHERE id = ?`;
+        await db.execute(query, [id]);
+        return {
+            success: true,
+            message: 'Xóa năm sổ văn bằng thành công',
+            data: {
+                id: id
+            }
+        };
     }
 }
 

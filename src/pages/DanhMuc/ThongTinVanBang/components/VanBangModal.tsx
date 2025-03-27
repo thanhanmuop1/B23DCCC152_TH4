@@ -1,33 +1,32 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, DatePicker, Select, InputNumber } from 'antd';
-import { ThongTinVanBang, QuyetDinhTotNghiep } from '../../../../models/Vanbang/thongtinvanbang';
-import { TruongThongTin } from '../../../../models/Vanbang/truongthongtin';
+import { ThongTinVanBang } from '@/models/Vanbang/thongtinvanbang';
+import { TruongThongTin } from '@/models/Vanbang/truongthongtin';
+import { SoVanBang } from '@/models/Vanbang/sovanbang';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { Moment } from 'moment';
 
 moment.locale('vi');
 
-// Interface hỗ trợ cho giá trị trường thông tin với kiểu dữ liệu cụ thể hơn
-interface GiaTriTruongThongTin {
-  truongThongTinId: string;
-  tenTruong: string;
-  kieuDuLieu: 'String' | 'Number' | 'Date';
-  giaTri: string | number | Date | null;
-}
-
 // Interface cho formValues với hỗ trợ cho các trường động
 interface FormValues {
   ngaySinh: Moment | null;
-  id: string;
+  id: number | string;
   soVaoSo: number;
   soHieuVanBang: string;
   maSinhVien: string;
   hoTen: string;
-  quyetDinhId: string;
+  quyetDinhId: number | string;
+  soVanBangId: number | string;
   tenQuyetDinh?: string;
-  truongThongTin: GiaTriTruongThongTin[];
   [key: `truongThongTin_${string}`]: Moment | string | number | null;
+}
+
+interface QuyetDinhTotNghiep {
+  id: number;
+  soQuyetDinh: string;
+  ngayBanHanh: Date;
 }
 
 interface VanBangModalProps {
@@ -36,6 +35,7 @@ interface VanBangModalProps {
   vanBangSelected: ThongTinVanBang | null;
   danhSachQuyetDinh: QuyetDinhTotNghiep[];
   danhSachTruongThongTin: TruongThongTin[];
+  danhSachSoVanBang: SoVanBang[];
   soVaoSoMoi: number;
   onCancel: () => void;
   onSubmit: (values: any) => void;
@@ -47,6 +47,7 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
   vanBangSelected,
   danhSachQuyetDinh,
   danhSachTruongThongTin,
+  danhSachSoVanBang,
   soVaoSoMoi,
   onCancel,
   onSubmit,
@@ -63,26 +64,27 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
         const formValues: FormValues = {
           ...vanBangSelected,
           ngaySinh: vanBangSelected.ngaySinh ? moment(vanBangSelected.ngaySinh) : null,
-          truongThongTin: [],
         };
         
         // Chuyển đổi các trường thông tin phụ lục thành dạng form values
-        vanBangSelected.truongThongTin.forEach(tt => {
-          // Đối với kiểu Date, cần chuyển về Moment object
-          if (tt.kieuDuLieu === 'Date' && tt.giaTri) {
-            formValues[`truongThongTin_${tt.truongThongTinId}`] = moment(tt.giaTri);
-          } else {
-            formValues[`truongThongTin_${tt.truongThongTinId}`] = tt.giaTri;
-          }
-        });
+        if (vanBangSelected.truongThongTin && typeof vanBangSelected.truongThongTin === 'object') {
+          Object.values(vanBangSelected.truongThongTin).forEach(tt => {
+            // Đối với kiểu Date, cần chuyển về Moment object
+            if (tt.kieuDuLieu === 'Date' && tt.giaTri) {
+              formValues[`truongThongTin_${tt.truongThongTinId}`] = moment(tt.giaTri);
+            } else {
+              formValues[`truongThongTin_${tt.truongThongTinId}`] = tt.giaTri;
+            }
+          });
+        }
         
         form.setFieldsValue(formValues);
       } else {
-        // Nếu là thêm mới, set số vào sổ mới nhất
-        form.setFieldsValue({ soVaoSo: soVaoSoMoi });
+        // Nếu là thêm mới, chỉ cần reset form, không cần set số vào sổ nữa
+        form.resetFields();
       }
     }
-  }, [open, type, vanBangSelected, form, soVaoSoMoi, danhSachTruongThongTin]);
+  }, [open, type, vanBangSelected, form, danhSachTruongThongTin]);
 
   // Xử lý submit form
   const handleSubmit = async () => {
@@ -95,8 +97,8 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
         ngaySinh: values.ngaySinh ? values.ngaySinh.toDate() : new Date(),
       };
       
-      // Tạo mảng trường thông tin phụ lục
-      const truongThongTin: GiaTriTruongThongTin[] = [];
+      // Tạo object chứa trường thông tin phụ lục
+      const truongThongTin: Record<string, any> = {};
       
       danhSachTruongThongTin.forEach(tt => {
         const fieldName = `truongThongTin_${tt.id}`;
@@ -104,33 +106,36 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
           let giaTri = values[fieldName];
           
           // Nếu là kiểu Date, chuyển về Date object
-          if (tt.kieuDuLieu === 'Date' && giaTri) {
+          if (tt.kieu_du_lieu === 'Date' && giaTri) {
             giaTri = giaTri.toDate();
           }
           
-          truongThongTin.push({
+          truongThongTin[tt.ten_truong] = {
             truongThongTinId: tt.id,
-            tenTruong: tt.tenTruong,
-            kieuDuLieu: tt.kieuDuLieu,
+            tenTruong: tt.ten_truong,
+            kieuDuLieu: tt.kieu_du_lieu,
             giaTri: giaTri,
-          });
+          };
           
           // Xóa trường này khỏi values để không gửi lên server
           delete formattedValues[fieldName];
         }
       });
       
-      // Thêm mảng trường thông tin vào values
+      // Thêm object trường thông tin vào values
       formattedValues.truongThongTin = truongThongTin;
       
-      // Nếu là edit thì giữ lại id
+      // Nếu là edit thì giữ lại id và soVaoSo
       if (type === 'edit' && vanBangSelected) {
         formattedValues.id = vanBangSelected.id;
         formattedValues.soVaoSo = vanBangSelected.soVaoSo;
+      } else {
+        // Nếu là add, không cần soVaoSo vì sẽ được tạo tự động bên server
+        // soVaoSo sẽ được tính dựa trên soVanBangId
       }
       
       // Thêm tên quyết định để hiển thị trong bảng
-      const quyetDinh = danhSachQuyetDinh.find(qd => qd.id === formattedValues.quyetDinhId);
+      const quyetDinh = danhSachQuyetDinh.find(qd => qd.id === Number(formattedValues.quyetDinhId));
       if (quyetDinh) {
         formattedValues.tenQuyetDinh = quyetDinh.soQuyetDinh;
       }
@@ -150,32 +155,33 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
       let formItem;
       const fieldName = `truongThongTin_${truong.id}`;
       
-      switch (truong.kieuDuLieu) {
+      switch (truong.kieu_du_lieu) {
         case 'String':
-          formItem = <Input placeholder={`Nhập ${truong.tenTruong}`} />;
+          formItem = <Input placeholder={`Nhập ${truong.ten_truong}`} />;
           break;
         case 'Number':
-          formItem = <InputNumber style={{ width: '100%' }} placeholder={`Nhập ${truong.tenTruong}`} />;
+          formItem = <InputNumber style={{ width: '100%' }} placeholder={`Nhập ${truong.ten_truong}`} />;
           break;
         case 'Date':
           formItem = (
             <DatePicker 
               format="DD/MM/YYYY" 
               style={{ width: '100%' }} 
-              placeholder={`Chọn ${truong.tenTruong}`} 
+              placeholder={`Chọn ${truong.ten_truong}`} 
             />
           );
           break;
         default:
-          formItem = <Input placeholder={`Nhập ${truong.tenTruong}`} />;
+          formItem = <Input placeholder={`Nhập ${truong.ten_truong}`} />;
       }
       
       return (
         <Form.Item
           key={truong.id}
           name={fieldName}
-          label={truong.tenTruong}
-          rules={truong.batBuoc ? [{ required: true, message: `Vui lòng nhập ${truong.tenTruong}!` }] : []}
+          label={truong.ten_truong}
+          // Giả sử tất cả các trường không bắt buộc, có thể điều chỉnh theo yêu cầu
+          rules={[]}
         >
           {formItem}
         </Form.Item>
@@ -199,12 +205,15 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
         layout="vertical"
         initialValues={{ ngaySinh: moment().subtract(20, 'years') }}
       >
-        <Form.Item
-          name="soVaoSo"
-          label="Số vào sổ"
-        >
-          <Input disabled />
-        </Form.Item>
+        {/* Bỏ phần hiển thị số vào sổ vì sẽ được tạo tự động */}
+        {type === 'edit' && (
+          <Form.Item
+            name="soVaoSo"
+            label="Số vào sổ"
+          >
+            <Input disabled />
+          </Form.Item>
+        )}
 
         <Form.Item
           name="soHieuVanBang"
@@ -251,6 +260,20 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
             {danhSachQuyetDinh.map(qd => (
               <Select.Option key={qd.id} value={qd.id}>
                 {qd.soQuyetDinh} - {moment(qd.ngayBanHanh).format('DD/MM/YYYY')}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+        
+        <Form.Item
+          name="soVanBangId"
+          label="Năm phát hành"
+          rules={[{ required: true, message: 'Vui lòng chọn năm phát hành!' }]}
+        >
+          <Select placeholder="Chọn năm phát hành">
+            {danhSachSoVanBang.map(so => (
+              <Select.Option key={so.id} value={so.id}>
+                {so.nam} - Sổ {so.id}
               </Select.Option>
             ))}
           </Select>

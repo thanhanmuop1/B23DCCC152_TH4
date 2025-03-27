@@ -109,6 +109,51 @@ class SoVanBangController {
             });
         }
     }
+
+    //Cập nhật năm sổ văn bằng
+    async update(req, res) {
+        try {
+            const { nam } = req.body;
+            if (!nam || isNaN(nam) || nam < 1900 || nam > 2100) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Năm không hợp lệ'
+                });
+            }
+            
+            const updatedBook = await SoVanBang.updateNamSoVanBang(req.params.id, nam);
+            res.json({
+                success: true,
+                message: 'Cập nhật năm sổ văn bằng thành công',
+                data: updatedBook
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Lỗi khi cập nhật năm sổ văn bằng',
+                error: error.message
+            });
+        }
+    }
+
+    //Xóa năm sổ văn bằng
+    async delete(req, res) {
+        try {
+            const { nam } = req.body;
+            const isDeleted = await SoVanBang.deleteNamSoVanBang(req.params.id, nam);
+            res.json({
+                success: true,
+                message: 'Xóa năm sổ văn bằng thành công',
+                data: isDeleted
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Lỗi khi xóa năm sổ văn bằng',
+                error: error.message
+            });
+        }
+    }
 }
 
 module.exports = new SoVanBangController(); 

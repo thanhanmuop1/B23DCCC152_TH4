@@ -1,30 +1,35 @@
 import React from 'react';
-import { Descriptions, Typography, Divider } from 'antd';
-import { ThongTinVanBang, QuyetDinhTotNghiep } from '../../../../models/Vanbang/thongtinvanbang';
+import { Drawer, Descriptions, Tag, Typography, Divider } from 'antd';
+import { ThongTinVanBang } from '@/models/Vanbang/thongtinvanbang';
+import { QuyetDinhTotNghiep } from '@/models/Vanbang/quyetdinhtotnghiep';
 import moment from 'moment';
-import 'moment/locale/vi';
 
-moment.locale('vi');
 const { Title } = Typography;
 
 interface VanBangDetailProps {
-  vanBang: ThongTinVanBang;
+  visible: boolean;
+  vanBang: ThongTinVanBang | null;
   danhSachQuyetDinh: QuyetDinhTotNghiep[];
+  onClose: () => void;
 }
 
-const VanBangDetail: React.FC<VanBangDetailProps> = ({ vanBang, danhSachQuyetDinh }) => {
-  // Tìm thông tin quyết định tốt nghiệp
-  const quyetDinh = danhSachQuyetDinh.find(qd => qd.id === vanBang.quyetDinhId);
+const VanBangDetail: React.FC<VanBangDetailProps> = ({
+  visible,
+  vanBang,
+  danhSachQuyetDinh,
+  onClose,
+}) => {
+  if (!vanBang) return null;
 
-  // Nhóm các trường thông tin phụ lục theo kiểu dữ liệu để hiển thị
-  const renderGiaTri = (kieuDuLieu: string, giaTri: any) => {
-    if (giaTri === null || giaTri === undefined) return 'Không có';
+  const quyetDinh = danhSachQuyetDinh.find(q => q.id === vanBang.quyetDinhId);
+
+  // Format giá trị theo kiểu dữ liệu
+  const formatGiaTri = (giaTri: any, kieuDuLieu: string) => {
+    if (giaTri === null || giaTri === undefined) return '-';
     
     switch (kieuDuLieu) {
-      case 'String':
-        return giaTri;
       case 'Number':
-        return giaTri.toString();
+        return Number(giaTri).toLocaleString('vi-VN');
       case 'Date':
         return moment(giaTri).format('DD/MM/YYYY');
       default:
@@ -33,42 +38,56 @@ const VanBangDetail: React.FC<VanBangDetailProps> = ({ vanBang, danhSachQuyetDin
   };
 
   return (
-    <div>
-      <Title level={4}>Thông tin văn bằng</Title>
-      <Descriptions bordered column={1}>
-        <Descriptions.Item label="ID">{vanBang.id}</Descriptions.Item>
-        <Descriptions.Item label="Số vào sổ">{vanBang.soVaoSo}</Descriptions.Item>
-        <Descriptions.Item label="Số hiệu văn bằng">{vanBang.soHieuVanBang}</Descriptions.Item>
-        <Descriptions.Item label="Mã sinh viên">{vanBang.maSinhVien}</Descriptions.Item>
-        <Descriptions.Item label="Họ tên">{vanBang.hoTen}</Descriptions.Item>
-        <Descriptions.Item label="Ngày sinh">
-          {vanBang.ngaySinh ? moment(vanBang.ngaySinh).format('DD/MM/YYYY') : ''}
+    <Drawer
+      title="Chi tiết thông tin văn bằng"
+      width={700}
+      placement="right"
+      onClose={onClose}
+      open={visible}
+    >
+      <Title level={5}>Thông tin chính</Title>
+      <Descriptions bordered column={2}>
+        <Descriptions.Item label="Số vào sổ" span={1}>
+          {vanBang.soVaoSo}
         </Descriptions.Item>
-        <Descriptions.Item label="Quyết định tốt nghiệp">
+        <Descriptions.Item label="Số hiệu văn bằng" span={1}>
+          {vanBang.soHieuVanBang}
+        </Descriptions.Item>
+        <Descriptions.Item label="Mã sinh viên" span={1}>
+          {vanBang.maSinhVien}
+        </Descriptions.Item>
+        <Descriptions.Item label="Họ tên" span={1}>
+          {vanBang.hoTen}
+        </Descriptions.Item>
+        <Descriptions.Item label="Ngày sinh" span={1}>
+          {moment(vanBang.ngaySinh).format('DD/MM/YYYY')}
+        </Descriptions.Item>
+        <Descriptions.Item label="Quyết định tốt nghiệp" span={1}>
           {quyetDinh ? (
-            <div>
-              <div>{quyetDinh.soQuyetDinh}</div>
-              <div>Ngày ban hành: {moment(quyetDinh.ngayBanHanh).format('DD/MM/YYYY')}</div>
-              <div>Trích yếu: {quyetDinh.trichYeu}</div>
-            </div>
-          ) : vanBang.tenQuyetDinh || 'Không tìm thấy thông tin'}
+            <>
+              {quyetDinh.soQuyetDinh} - {moment(quyetDinh.ngayBanHanh).format('DD/MM/YYYY')}
+            </>
+          ) : (
+            '-'
+          )}
         </Descriptions.Item>
       </Descriptions>
 
-      {vanBang.truongThongTin && vanBang.truongThongTin.length > 0 && (
-        <>
-          <Divider />
-          <Title level={4}>Thông tin phụ lục</Title>
-          <Descriptions bordered column={1}>
-            {vanBang.truongThongTin.map((tt, index) => (
-              <Descriptions.Item key={index} label={tt.tenTruong}>
-                {renderGiaTri(tt.kieuDuLieu, tt.giaTri)}
-              </Descriptions.Item>
-            ))}
-          </Descriptions>
-        </>
+      <Divider />
+      <Title level={5}>Thông tin phụ lục</Title>
+      
+      {Object.values(vanBang.truongThongTin).length > 0 ? (
+        <Descriptions bordered column={2}>
+          {Object.values(vanBang.truongThongTin).map(item => (
+            <Descriptions.Item key={item.truongThongTinId} label={item.tenTruong} span={1}>
+              {formatGiaTri(item.giaTri, item.kieuDuLieu)}
+            </Descriptions.Item>
+          ))}
+        </Descriptions>
+      ) : (
+        <p>Không có thông tin phụ lục</p>
       )}
-    </div>
+    </Drawer>
   );
 };
 

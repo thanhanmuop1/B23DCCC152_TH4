@@ -91,7 +91,7 @@ const SoVanBangModal: React.FC<SoVanBangModalProps> = ({
 
         {type === 'edit' && (
           <Form.Item
-            name="so_hien_tai"
+            name="soHienTai"
             label="Số hiện tại"
           >
             <InputNumber disabled style={{ width: '100%' }} />

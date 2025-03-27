@@ -152,6 +152,8 @@ class VanBang {
 
     // Tạo văn bằng mới và lưu các giá trị trường động
     static async create(vanBangData, truongDongValues) {
+        console.log(vanBangData);
+        console.log(vanBangData.so_van_bang_id);
         const connection = await db.getConnection();
         try {
             await connection.beginTransaction();

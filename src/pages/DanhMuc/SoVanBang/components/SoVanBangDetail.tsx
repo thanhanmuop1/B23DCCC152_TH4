@@ -11,7 +11,7 @@ const SoVanBangDetail: React.FC<SoVanBangDetailProps> = ({ soVanBang }) => {
     <Descriptions bordered column={1}>
       <Descriptions.Item label="ID">{soVanBang.id}</Descriptions.Item>
       <Descriptions.Item label="Năm">{soVanBang.nam}</Descriptions.Item>
-      <Descriptions.Item label="Số hiện tại">{soVanBang.so_hien_tai}</Descriptions.Item>
+      <Descriptions.Item label="Số hiện tại">{soVanBang.soHienTai}</Descriptions.Item>
     </Descriptions>
   );
 };

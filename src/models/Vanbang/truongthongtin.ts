@@ -75,6 +75,7 @@ export function useInitModel() {
   const capNhatTruongThongTin = async (values: TruongThongTin) => {
     setLoading(true);
     try {
+      console.log(values);
       const response = await TruongThongTinService.update(values.id, values);
       if (response.data.success) {
         message.success('Cập nhật trường thông tin thành công');
