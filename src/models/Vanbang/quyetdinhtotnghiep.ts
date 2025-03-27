@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { message } from 'antd';
-import { v4 as uuidv4 } from 'uuid';
 import QuyetDinhTotNghiepService from '@/services/QuyetDinhTotNghiep';
+import SoVanBangService from '@/services/SoVanBang';
+import { SoVanBang } from './sovanbang';
 
 // Định nghĩa interface cho quyết định tốt nghiệp
 export interface QuyetDinhTotNghiep {
@@ -13,12 +14,6 @@ export interface QuyetDinhTotNghiep {
   nam?: number; // Từ join với bảng SoVanBang
 }
 
-// Định nghĩa interface cho sổ văn bằng để sử dụng trong dropdown
-export interface SoVanBang {
-  id: string;
-  ten: string;
-}
-
 // Hook để quản lý state của quyết định tốt nghiệp
 export function useInitModel() {
   const [danhSachQuyetDinh, setDanhSachQuyetDinh] = useState<QuyetDinhTotNghiep[]>([]);
@@ -26,13 +21,22 @@ export function useInitModel() {
   const [loading, setLoading] = useState<boolean>(false);
   const [visibleModal, setVisibleModal] = useState<boolean>(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
+  const [danhSachSoVanBang, setDanhSachSoVanBang] = useState<SoVanBang[]>([]);
 
-  // Mock data cho sổ văn bằng
-  const [danhSachSoVanBang] = useState<SoVanBang[]>([
-    { id: '1', ten: 'Sổ văn bằng khóa 2020' },
-    { id: '2', ten: 'Sổ văn bằng khóa 2021' },
-    { id: '3', ten: 'Sổ văn bằng khóa 2022' },
-  ]);
+  // Hàm lấy danh sách sổ văn bằng từ API
+  const fetchDanhSachSoVanBang = async () => {
+    try {
+      const response = await SoVanBangService.getList();
+      if (response.data.success) {
+        setDanhSachSoVanBang(response.data.data);
+      } else {
+        message.error(response.data.message || 'Có lỗi xảy ra khi tải danh sách sổ văn bằng');
+      }
+    } catch (error) {
+      message.error('Không thể kết nối đến server');
+      console.error(error);
+    }
+  };
 
   // Hàm lấy danh sách từ API
   const fetchDanhSachQuyetDinh = async () => {
@@ -64,6 +68,7 @@ export function useInitModel() {
   // Fetch dữ liệu khi component mount
   useEffect(() => {
     fetchDanhSachQuyetDinh();
+    fetchDanhSachSoVanBang();
   }, []);
 
   // Hàm thêm quyết định mới
@@ -77,7 +82,6 @@ export function useInitModel() {
         trich_yeu: quyetDinh.trichYeu,
         so_van_bang_id: quyetDinh.soVanBangId
       };
-      console.log(quyetDinhData);
       const response = await QuyetDinhTotNghiepService.create(quyetDinhData);
       
       if (response.data.success) {
@@ -199,6 +203,7 @@ export function useInitModel() {
     capNhatQuyetDinh,
     xoaQuyetDinh,
     timKiemQuyetDinh,
-    fetchDanhSachQuyetDinh
+    fetchDanhSachQuyetDinh,
+    fetchDanhSachSoVanBang
   };
 } 

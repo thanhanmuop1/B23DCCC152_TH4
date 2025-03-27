@@ -6,7 +6,7 @@ import {
 import { Button, Input, Space, Popconfirm, message, Drawer } from 'antd';
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { TableColumnsType } from 'antd';
-import { useInitModel, QuyetDinhTotNghiep } from '../../../models/Vanbang/quyetdinhtotnghiep';
+import { useInitModel, QuyetDinhTotNghiep } from '@/models/Vanbang/quyetdinhtotnghiep';
 import QuyetDinhModal from './components/QuyetDinhModal';
 import QuyetDinhDetail from './components/QuyetDinhDetail';
 import moment from 'moment';
@@ -32,7 +32,7 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
     xoaQuyetDinh,
     timKiemQuyetDinh,
     fetchDanhSachQuyetDinh
-  } = useInitModel<QuyetDinhTotNghiep>();
+  } = useInitModel();
 
   const [visibleDetail, setVisibleDetail] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>('');
@@ -120,6 +120,16 @@ const QuyetDinhTotNghiepPage: React.FC = () => {
       dataIndex: 'trichYeu',
       key: 'trichYeu',
       ellipsis: true,
+    },
+    {
+      title: 'Sổ văn bằng',
+      dataIndex: 'soVanBangId',
+      key: 'soVanBangId',
+      width: 180,
+      render: (value) => {
+        const soVanBang = danhSachSoVanBang.find(so => so.id === value);
+        return soVanBang ? `Năm ${soVanBang.nam}` : '';
+      },
     },
     {
       title: 'Thao tác',

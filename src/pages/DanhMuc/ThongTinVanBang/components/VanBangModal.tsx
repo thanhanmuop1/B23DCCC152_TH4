@@ -273,7 +273,7 @@ const VanBangModal: React.FC<VanBangModalProps> = ({
           <Select placeholder="Chọn năm phát hành">
             {danhSachSoVanBang.map(so => (
               <Select.Option key={so.id} value={so.id}>
-                {so.nam} - Sổ {so.id}
+                Năm {so.nam}
               </Select.Option>
             ))}
           </Select>
