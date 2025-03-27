@@ -93,7 +93,7 @@ exports.updateTruongThongTin = async (req, res) => {
 	try {
 		const id = req.params.id;
 		const { ten_truong, kieu_du_lieu } = req.body;
-
+		console.log(req.body);
 		// Validate dữ liệu đầu vào
 		if (!ten_truong || !kieu_du_lieu) {
 			return res.status(400).json({
